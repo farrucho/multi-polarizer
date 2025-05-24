@@ -11,13 +11,6 @@ class Photodiode {
     public:
         Photodiode(uint8_t pin){
             analog_pin = pin;
-            if (VOLTAGEREF1_1V == true){
-                // usar 1.1V
-                analogReference(INTERNAL1V1);
-            }else{
-                analogReference(INTERNAL2V56);
-            }
-
         }
 
         void enable(){
@@ -25,6 +18,12 @@ class Photodiode {
         }
 
         float getVoltage(){
+            if (VOLTAGEREF1_1V == true){
+                // usar 1.1V
+                analogReference(INTERNAL1V1);
+            }else{
+                analogReference(INTERNAL2V56);
+            }
             analogRead(analog_pin);
             int sumAnalogRead = 0;
             // int repetitions = 13;
