@@ -17,6 +17,7 @@ class Switch {
         }
 
         bool isTrigger(){
+            enable();
             endstopState = digitalRead(endstop_pin);
             return (endstopState == LOW);
         }

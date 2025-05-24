@@ -8,6 +8,35 @@
 
 extern class P0: public proto {
     public:
+      void led_on(){
+      }
+      void led_off(){
+      }
+      void lamp_on(){
+      }
+      void lamp_off(){
+      }
+      void set_maxstep(){
+
+      }
+      bool isSwitchTrigger(int n){
+        return false;
+      }
+
+      void move_forward(){
+
+      }
+      void move_backward(){
+  
+      }
+
+      void go_to_origin(){
+
+      }
+
+      float photodiode_value(){
+        return -1;
+      }
 
       void stopping() {
         if (DEBUG) Serial.println("0_stopping");
@@ -15,6 +44,14 @@ extern class P0: public proto {
   
       void configuring() {
         if (DEBUG) Serial.println("0_configuring");
+        // for (int j = 0; j < NARGUMENTS; ++j)
+        // {
+        //   Serial.println(expr.param[j]);
+        // }
+      }
+  
+      void reseting() {
+        if (DEBUG) Serial.println("0_reseting");
         // for (int j = 0; j < NARGUMENTS; ++j)
         // {
         //   Serial.println(expr.param[j]);

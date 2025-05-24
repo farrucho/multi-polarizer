@@ -16,11 +16,12 @@ class Stepper {
 
             rpm = rotpermin;
             step_high_delay = 0.1; // [ms], tem que ser > 1.9 microsegundos
-            step_low_delay = 60.0*1000/rpm - step_high_delay; // [ms]
-            step_frequency = 1/(step_low_delay + step_high_delay); // [Khz]
+            //step_low_delay = 4;
+            step_low_delay = 0.3/rpm*1000 - step_high_delay; // [ms]
+            //step_frequency = 1/(step_low_delay + step_high_delay); // [Khz]
+	    
 
-
-            if (step_frequency > 210) { // nao ultrapassar os rpm maximos
+            if (rpm > 900) { // nao ultrapassar os rpm maximos
                 Serial.println("ERROR: STEP_FREQUENCY exceeds 210 kHz!");
                 while (1);
             }
