@@ -93,6 +93,10 @@ extern class P1: public proto {
     float photodiode_value(){
       return photodiode.getVoltage();
     }
+
+    void update_Vref(){
+      photodiode.changeReference();
+    }
     
 
     void stopping() {

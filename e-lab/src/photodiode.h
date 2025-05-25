@@ -16,6 +16,25 @@ class Photodiode {
         void enable(){
             pinMode(analog_pin, INPUT);
         }
+        
+        void changeReference(){
+            analogRead(analog_pin);  // dummy read
+            if (vrefMode == 1){
+                // usar 1.1V
+                analogReference(INTERNAL1V1);
+                // Serial.print("1.1");
+            }else if (vrefMode == 2){
+                // usar 2.56V
+                analogReference(INTERNAL2V56);
+                // Serial.print("2.56");
+            }else if (vrefMode == 3){
+                // usar 5V
+                analogReference(DEFAULT);
+                // Serial.print("DEFAULT");
+            }
+            delay(20);
+            getVoltage(); // para dar throw e atualizar valores seguintes
+        }
 
         float getVoltage(){
             if (VOLTAGEREF1_1V == true){

@@ -37,6 +37,7 @@ class proto {
     virtual void move_backward();
     virtual void go_to_origin();
     virtual float photodiode_value();
+    virtual void update_Vref();
 };
 
 
@@ -202,7 +203,7 @@ public:
           Serial.print("lamp on [0:255]\r\n");
           Serial.print("lamp off\r\n\r\n");
           Serial.print("set maxstep [0:1000]\r\n\r\n");
-          Serial.print("set vref1_1 [0:1] // a fim de não saturar leitura do photodiodo, if 1 Vref=1.1V else Vref=2.56V \r\n");
+          Serial.print("set vref[1:3] // a fim de não saturar leitura do photodiodo, 1:Vref=1.1V  2:Vref=2.56V 3:Vref=5V \r\n");
           Serial.print("move forward polarizer_to_sweep[1:5] steps[0:MAXIMUM_STEP]\r\n");
           Serial.print("move backward polarizer_to_sweep[1:5] steps[0:MAXIMUM_STEP]\r\n");
           Serial.print("go to origin polarizer_to_sweep[1:5]\r\n\r\n");
@@ -210,10 +211,12 @@ public:
           Serial.print(MAXIMUM_STEP);
           Serial.print(" steps\r\n");
           Serial.print("Reference Voltage: ");
-          if(VOLTAGEREF1_1V){
+          if(vrefMode == 1){
             Serial.print(" 1.1V");
-          }else{
+          }if(vrefMode == 2){
             Serial.print(" 2.56V");
+          }if(vrefMode == 3){
+            Serial.print(" 5V");
           }
           Serial.print("\r\n");
           Serial.print("Photodiode Value (0-1023): ");
@@ -309,7 +312,7 @@ public:
           protocol[p_run]->set_maxstep();
           Serial.print("set_maxstep\r\n");
         }
-        if (strncmp(rbuf, "set vref1_1",11) == 0)
+        if (strncmp(rbuf, "set vref",8) == 0)
         {
           char *auxiliar_parts;
           auxiliar_parts = strtok(rbuf, "\t ");
@@ -324,12 +327,15 @@ public:
             auxiliar_parts = strtok (NULL, "\t ");
           }
           if(auxiliar_param[0] == 1){
-            VOLTAGEREF1_1V = true;
-          }else if(auxiliar_param[0] == 0){
-            VOLTAGEREF1_1V = false;
+            vrefMode = 1;
+          }if(auxiliar_param[0] == 2){
+            vrefMode = 2;
+          }else if (auxiliar_param[0] == 3){
+            vrefMode = 3;
           }
-          Serial.print("set_VOLTAGEREF1_1V_");
-          Serial.print(auxiliar_param[0]);
+          protocol[p_run]->update_Vref();
+          Serial.print("set_vref_");
+          Serial.print(vrefMode);
           Serial.print("\r\n");
         }
         if (strncmp(rbuf, "move forward",12) == 0)
