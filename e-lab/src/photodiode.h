@@ -36,11 +36,9 @@ class Photodiode {
             getVoltage(); // para dar throw e atualizar valores seguintes
         }
 
-        float getVoltage(){
+        float getVoltage(int repetitions = 20){
             analogRead(analog_pin);
-            int sumAnalogRead = 0;
-            // int repetitions = 13;
-            int repetitions = 20;
+            unsigned long sumAnalogRead = 0;
             for(int i = 0; i < repetitions;i++){
                 sumAnalogRead+=analogRead(analog_pin);
             }
