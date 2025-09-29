@@ -1,5 +1,7 @@
 Experiment related changes to be made:
 
+If can't compile check platformio.io some arduinos are /dev/ttyUSB0 /dev/ttyACM0
+
 change main.cpp
 elab:
 ```
