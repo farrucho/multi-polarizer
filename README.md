@@ -23,8 +23,8 @@ elab:
 
 oeiras:
 ```
-    uint8_t resetDir = LOW;
-    uint8_t dirToTop = HIGH;
+    uint8_t resetDir = HIGH;
+    uint8_t dirToTop = LOW;
     int vrefMode = 3;
 ```
 
