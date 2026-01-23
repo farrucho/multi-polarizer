@@ -33,8 +33,8 @@ Stepper stepper_Z(RPM_GLOBAL,46,48,A8);
 // Switch switchArray[5] = {switch_X,switch_Y,switch_E1,switch_Z,switch_E0};
 
 // Stepper stepperArray[5] = {stepper_E0,stepper_Z,stepper_E1,stepper_Y,stepper_X};
-Stepper stepperArray[5] = {stepper_X, stepper_Y, stepper_E1, stepper_Z, stepper_E0};
 //Switch switchArray[5] = {switch_E0,switch_Z,switch_E1,switch_Y,switch_X};
+Stepper stepperArray[5] = {stepper_X, stepper_Y, stepper_E1, stepper_Z, stepper_E0};
 Switch switchArray[5] = {switch_X, switch_Y, switch_E1, switch_Z, switch_E0};
 
 
@@ -122,13 +122,7 @@ extern class P1: public proto {
       switch_Y.enable();
       switch_Z.enable();
       
-      stepper_E0.enable();
-      stepper_E1.enable();
-      stepper_X.enable();
-      stepper_Y.enable();
-      stepper_Z.enable();
-      
-      photodiode.enable();
+      // photodiode.enable();
       
       led.enable();
       lamp.enable();
@@ -144,10 +138,13 @@ extern class P1: public proto {
       // reset a todos os gears
       // uint8_t resetDir = HIGH;
       for(int stepperIndex=0;stepperIndex < 5;stepperIndex++){
-          while(!switchArray[stepperIndex].isTrigger()) {
-              // stepperArray[stepperIndex].rotate(1.8,resetDir);
-              stepperArray[stepperIndex].step(resetDir);
-          }
+        stepperArray[stepperIndex].enable();
+        delay(2);
+        while(!switchArray[stepperIndex].isTrigger()) {
+            // stepperArray[stepperIndex].rotate(1.8,resetDir);
+            stepperArray[stepperIndex].step(resetDir);
+        }
+        stepperArray[stepperIndex].turnOff();
       }
       // acabou o reset dos gear
       
@@ -157,14 +154,19 @@ extern class P1: public proto {
       {
         // uint8_t dirToTop = LOW;
         if(expr.param[j] >= 0 && expr.param[j] <= expr.MAXIMUM_STEP){
+            stepperArray[j].enable();
+            delay(2);
             stepperArray[j].nsteps(expr.param[j],dirToTop);
+            stepperArray[j].turnOff();
             // polarizer j rodado
         }else{
             Serial.println("ERR dados incorretos não vai rodar polarizadores");
             // nao vai rodar dados incorretos
         }
       }
+
     }
+    
 
     void starting() {
       // if (DEBUG) Serial.println("1_starting");
@@ -177,11 +179,11 @@ extern class P1: public proto {
       switch_Y.enable();
       switch_Z.enable();
       
-      stepper_E0.enable();
-      stepper_E1.enable();
-      stepper_X.enable();
-      stepper_Y.enable();
-      stepper_Z.enable();
+      // stepper_E0.enable();
+      // stepper_E1.enable();
+      // stepper_X.enable();
+      // stepper_Y.enable();
+      // stepper_Z.enable();
       
       photodiode.enable();
       
@@ -203,22 +205,36 @@ extern class P1: public proto {
     switch_Y.enable();
     switch_Z.enable();
     
-    stepper_E0.enable();
-    stepper_E1.enable();
-    stepper_X.enable();
-    stepper_Y.enable();
-    stepper_Z.enable();
+    // stepper_E0.enable();
+    // stepper_E1.enable();
+    // stepper_X.enable();
+    // stepper_Y.enable();
+    // stepper_Z.enable();
     
     photodiode.enable();
     
     // reset a todos os gears
     // uint8_t resetDir = HIGH;
+    // for(int stepperIndex=0;stepperIndex < 5;stepperIndex++){
+    //     while(!switchArray[stepperIndex].isTrigger()) {
+    //         // stepperArray[stepperIndex].rotate(1.8,resetDir);
+    //         stepperArray[stepperIndex].step(resetDir);
+    //     }
+    // }
+
+    
     for(int stepperIndex=0;stepperIndex < 5;stepperIndex++){
-        while(!switchArray[stepperIndex].isTrigger()) {
-            // stepperArray[stepperIndex].rotate(1.8,resetDir);
-            stepperArray[stepperIndex].step(resetDir);
-        }
+      stepperArray[stepperIndex].enable();
+      delay(1);
+      while(!switchArray[stepperIndex].isTrigger()) {
+          // stepperArray[stepperIndex].rotate(1.8,resetDir);
+          stepperArray[stepperIndex].step(resetDir);
+          delay(1);
+      }
+      stepperArray[stepperIndex].turnOff();
     }
+
+
 
   }
 
@@ -402,7 +418,7 @@ extern class P1: public proto {
         // efetuar varrimento
         Serial.print("DAT\n\r");
 	
-	// corrigir ruido inicial
+	      // corrigir ruido inicial
         for(int i = 0; i < 10; i++){
                 photodiode.getVoltage(100);
                 delay(10);      
@@ -421,10 +437,13 @@ extern class P1: public proto {
               Serial.print("NaN");
               Serial.print("\t");
               Serial.print(photodiode.getVoltage());
-        Serial.print("\r");
+              Serial.print("\r");
             }
         }
   
+
+        stepperArray[expr.param[5]-1].enable();
+
         if(expr.param[5] > 0 && expr.param[5] < 6){
           int initialSteps = expr.param[(int)expr.param[5]-1]; // step inicial do varrimento, pegar no numero (1-5) polarizer a varrer e subtrair 1 para obter index correto dos parametros
           for(int currentStep = initialSteps; currentStep < expr.param[6];currentStep=currentStep+1){
@@ -443,6 +462,10 @@ extern class P1: public proto {
             // }
           }
         }
+
+        stepperArray[expr.param[5]-1].turnOff();
+
+
         
         // Serial.print("\r");
         // if (DEBUG) Serial.println("\n");

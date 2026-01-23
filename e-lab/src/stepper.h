@@ -39,9 +39,9 @@ class Stepper {
             digitalWrite(dir_pin, direction);   // Sentido ponteiros relógio
 
             digitalWrite(step_pin, HIGH);
-            delay(step_high_delay);
+            delayMicroseconds(step_high_delay*1000);
             digitalWrite(step_pin, LOW);
-            delay(step_low_delay);
+            delayMicroseconds(step_low_delay*1000);
         }
 
 
@@ -52,11 +52,11 @@ class Stepper {
         }
 
 
-        void rotate(double degree,uint8_t direction){ // Faz N-steps para rodar alfa-graus
-            for(int i = 0; i < degree/1.8; i++){
-                step(direction);
-            }
-        }
+        // void rotate(double degree,uint8_t direction){ // Faz N-steps para rodar alfa-graus
+        //     for(int i = 0; i < degree/1.8; i++){
+        //         step(direction);
+        //     }
+        // }
 
 
         void turnOff(){
