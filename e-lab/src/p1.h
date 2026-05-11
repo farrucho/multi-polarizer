@@ -442,12 +442,13 @@ extern class P1: public proto {
         }
   
 
-        stepperArray[expr.param[5]-1].enable();
-
+        
         if(expr.param[5] > 0 && expr.param[5] < 6){
           int initialSteps = expr.param[(int)expr.param[5]-1]; // step inicial do varrimento, pegar no numero (1-5) polarizer a varrer e subtrair 1 para obter index correto dos parametros
           for(int currentStep = initialSteps; currentStep < expr.param[6];currentStep=currentStep+1){
-            stepperArray[expr.param[5]-1].step(dirToTop);
+			stepperArray[expr.param[5]-1].enable();
+        	stepperArray[expr.param[5]-1].step(dirToTop);
+			stepperArray[expr.param[5]-1].turnOff();
             delay(30);
             //  #1   |   348º   |    503mv    |    
             Serial.print("\n");
