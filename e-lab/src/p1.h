@@ -17,7 +17,7 @@ Switch switch_E1(14);
 Switch switch_Y(15);
 Switch switch_Z(18);
 
-double RPM_GLOBAL = 100;
+double RPM_GLOBAL = 30;
 
 Stepper stepper_E0(RPM_GLOBAL,26,28,24);
 Stepper stepper_E1(RPM_GLOBAL,36,34,30);
@@ -234,163 +234,255 @@ extern class P1: public proto {
       stepperArray[stepperIndex].turnOff();
     }
 
-
-
   }
 
+
     void started() {
-    // FITTING BRUTEFORCE ALGORITHM
+      // Calibration algorithm
+      // if one wants to perform the calibration algorithm it works as follow:
+      // 1\ sweep all 5 polarizers synchronously (from initial_angle to max_angle) and find the maximum intensity angle a1
+      // 2\ set first polarizer to angle a1 and sweep the next four synchronously (from initial_angle to max_angle), check what is the maximum angle again a2
+      // 3\ set first polarizer to a1 and second polarizer to angle a2 and sweep remaining three polarizers, check maximum angle a3
+      // 4\ set polarizers to angles a1,a2,a3 and sweep the remaining 2 and find max angle...
+      // ... and so on until the a5 is achieved, then calibration is complete
+
+      // the automatic method calculates each maximum intensity angle as following, it grabs horizontal lines right below the peak and calculates the mean of each line, 
+      // to grab the approximated peak one does the average of previsouly obtained mean points from the horizontal lines.
+
+      // manual method: uncomment autommatic, then one by one uncomment each block of code in order to perform the 5 sweeps u compile the code 5 times,
+      // always updating the variables found to match the max intensity angles you found 
+
+
       bool bruteForce = false;
       if(bruteForce == true){
-        led.turnOn(255);
-        
-        // first polarizer sweepping
         this->reseting();
+        led.turnOn(255);
+        for(int i = 0; i < 5; i++){
+          stepperArray[i].enable();
+        }
 
-        
         double initial_angle = 25.2;
         double max_angle = 64.8;
         
+        int slice_top_offset = 525
+        int slice_bottom_offset = 500
+
+        // ---------------
+        double peak_angles[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+        double step_size = 0.36;
+        int total_steps = (int)((max_angle - initial_angle) / step_size) + 1;
+
+
+        for (int i = 0; i < 5; i++) { // i goes from 0 to 4
+            Serial.print("\n--- Starting Calibration for Polarizer "); Serial.print(i); Serial.println(" ---");
+            
+            // 1. Reset and lock previous polarizers to calibrated found angles a_i (0 to i-1)
+            for (int j = 0; j < i; j++) {
+                while(!switchArray[j].isTrigger()) { stepperArray[j].step(resetDir); }
+                stepperArray[j].nsteps(peak_angles[j] / step_size, dirToTop);
+                Serial.print("P"); Serial.print(j); Serial.println(" Locked to Peak");
+            }
+            
+            // 2. reset current (i) and sweep (i+1 to 4) and move to initial
+            for (int j = i; j < 5; j++) {
+                while(!switchArray[j].isTrigger()) { stepperArray[j].step(resetDir); }
+                stepperArray[j].nsteps(initial_angle / step_size, dirToTop);
+                Serial.print("P"); Serial.print(j); Serial.println(" Reset/Homed to Initial");
+            }
+
+            // 3. sweep block together
+            static float v_readings[112];
+            Serial.println("SWEEP_DATA_START");
+            for (int step = 0; step < total_steps; step++) {
+                photodiode.getVoltage();
+                v_readings[step] = photodiode.getVoltage(100);
+                
+                for (int j = i; j < 5; j++) {
+                    stepperArray[j].step(dirToTop);
+                }
+                Serial.print(step); Serial.print(":"); Serial.println(v_readings[step]);
+                delay(10);
+            }
+            Serial.println("SWEEP_DATA_END");
+
+            // 4. find max and perform slicing 
+            float max_v = 0;
+            int max_idx = 0;
+            for(int k = 0; k < total_steps; k++) { 
+                if(v_readings[k] > max_v) { max_v = v_readings[k]; max_idx = k; } 
+            }
+
+            float sum_midpoints = 0;
+            int count = 0;
+
+            for (int i_val = slice_bottom_offset; i_val <= slice_top_offset; i_val += 5) {
+                float threshold = (float)i_val;
+                int left = max_idx, right = max_idx;
+                
+                while(left > 0 && v_readings[left] > threshold) left--;
+                while(right < total_steps - 1 && v_readings[right] > threshold) right++;
+                
+                if (left > 0 && right < total_steps - 1) {
+                    sum_midpoints += (left + right) / 2.0;
+                    count++;
+                }
+            }
+            
+            peak_angles[i] = (count > 0) ? ((sum_midpoints / count) * step_size) + initial_angle 
+                                        : (max_idx * step_size) + initial_angle;
+
+            Serial.print("P"); Serial.print(i); 
+            Serial.print(" | Successful Slices: "); Serial.print(count);
+            Serial.print(" | Calculated Peak: "); Serial.println(peak_angles[i]);
+        }
+                        
+        
+      
+        
+
+        
+        
         // sweep_1
         // set all to initial_angle
-//        for(int i = 0; i < 5; i++){
-//          stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
-//        }
+        // for(int i = 0; i < 5; i++){
+        //   stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
+        // }
 
-	// corrigir ruido inicial
-//	for(int i = 0; i < 10; i++){
-//		photodiode.getVoltage(100);
-//		delay(10);	
-//	}
+        // // corrigir ruido inicial
+        // for(int i = 0; i < 10; i++){
+        //   photodiode.getVoltage(100);
+        //   delay(10);	
+        // }
 
-//        for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
-//          photodiode.getVoltage();
-//          photodiode.getVoltage();
-//          delay(10);
-//          photodiode.getVoltage();
-//          Serial.print(current_angle);
-//          Serial.print(" ");
-//          Serial.print(photodiode.getVoltage(100));
-//          Serial.print("\r\n");
-//          for(int i = 0; i < 5; i++){
-//            stepperArray[i].step(dirToTop);
-//          }
-//        }
-//
+        // for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
+        //   photodiode.getVoltage();
+        //   photodiode.getVoltage();
+        //   delay(10);
+        //   photodiode.getVoltage();
+        //   Serial.print(current_angle);
+        //   Serial.print(" ");
+        //   Serial.print(photodiode.getVoltage(400));
+        //   Serial.print("\r\n");
+        //   for(int i = 0; i < 5; i++){
+        //     stepperArray[i].step(dirToTop);
+        //   }
+        // }
+
+
         // sweep_2
-        double first_max = 27.36;
-//        stepperArray[0].nsteps(first_max/0.36,dirToTop);
-//        for(int i = 1; i < 5; i++){
-//          stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
-//        }
-//        
-//        // corrigir ruido inicial
-//        for(int i = 0; i < 10; i++){
-//                photodiode.getVoltage(100);
-//                delay(10);      
-//        }
+        double first_max = 47.52;
+        // stepperArray[0].nsteps(first_max/0.36,dirToTop);
+        // for(int i = 1; i < 5; i++){
+        //   stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
+        // }
+        
+        // // corrigir ruido inicial
+        // for(int i = 0; i < 10; i++){
+        //         photodiode.getVoltage(100);
+        //         delay(10);      
+        // }
 
-//        for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
-//          photodiode.getVoltage();
-//          photodiode.getVoltage();
-//          delay(10);
-//          photodiode.getVoltage();
-//          Serial.print(current_angle);
-//          Serial.print(" ");
-//          Serial.print(photodiode.getVoltage(100));
-//          Serial.print("\r\n");
-//          for(int i = 1; i < 5; i++){
-//            stepperArray[i].step(dirToTop);
-//          }
-//        }
+        // for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
+        //   photodiode.getVoltage();
+        //   photodiode.getVoltage();
+        //   delay(10);
+        //   photodiode.getVoltage();
+        //   Serial.print(current_angle);
+        //   Serial.print(" ");
+        //   Serial.print(photodiode.getVoltage(100));
+        //   Serial.print("\r\n");
+        //   for(int i = 1; i < 5; i++){
+        //     stepperArray[i].step(dirToTop);
+        //   }
+        // }
 
         // sweep_3
-        double second_max = 31.32;
-//        stepperArray[0].nsteps(first_max/0.36,dirToTop);
-//        stepperArray[1].nsteps(second_max/0.36,dirToTop);
-//        for(int i = 2; i < 5; i++){
-//          stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
-//        }
-//
-//        // corrigir ruido inicial
-//        for(int i = 0; i < 10; i++){
-//                photodiode.getVoltage(100);
-//                delay(10);      
-//        }
-//        
-//        for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
-//          photodiode.getVoltage();
-//          photodiode.getVoltage();
-//          delay(10);
-//          photodiode.getVoltage();
-//          Serial.print(current_angle);
-//          Serial.print(" ");
-//          Serial.print(photodiode.getVoltage(100));
-//          Serial.print("\r\n");
-//          for(int i = 2; i < 5; i++){
-//            stepperArray[i].step(dirToTop);
-//          }
-//        }
+        double second_max = 46.8;
+      //  stepperArray[0].nsteps(first_max/0.36,dirToTop);
+      //  stepperArray[1].nsteps(second_max/0.36,dirToTop);
+      //  for(int i = 2; i < 5; i++){
+      //    stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
+      //  }
+
+      //  // corrigir ruido inicial
+      //  for(int i = 0; i < 10; i++){
+      //          photodiode.getVoltage(100);
+      //          delay(10);      
+      //  }
+       
+      //  for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
+      //    photodiode.getVoltage();
+      //    photodiode.getVoltage();
+      //    delay(10);
+      //    photodiode.getVoltage();
+      //    Serial.print(current_angle);
+      //    Serial.print(" ");
+      //    Serial.print(photodiode.getVoltage(100));
+      //    Serial.print("\r\n");
+      //    for(int i = 2; i < 5; i++){
+      //      stepperArray[i].step(dirToTop);
+      //    }
+      //  }
 //        
         // sweep_4
-        double third_max = 29.88;
-//        stepperArray[0].nsteps(first_max/0.36,dirToTop);
-//        stepperArray[1].nsteps(second_max/0.36,dirToTop);
-//        stepperArray[2].nsteps(third_max/0.36,dirToTop);
-//        for(int i = 3; i < 5; i++){
-//          stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
-//        }
-        
+        double third_max = 49.68;
+        // stepperArray[0].nsteps(first_max/0.36,dirToTop);
+        // stepperArray[1].nsteps(second_max/0.36,dirToTop);
+        // stepperArray[2].nsteps(third_max/0.36,dirToTop);
+        // for(int i = 3; i < 5; i++){
+        //   stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
+        // }
+          
         // corrigir ruido inicial
-//        for(int i = 0; i < 10; i++){
-//                photodiode.getVoltage(100);
-//                delay(10);      
-//        }
-//
-//
-//        for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
-//          photodiode.getVoltage();
-//          photodiode.getVoltage();
-//          delay(10);
-//          photodiode.getVoltage();
-//          Serial.print(current_angle);
-//          Serial.print(" ");
-//          Serial.print(photodiode.getVoltage(100));
-//          Serial.print("\r\n");
-//          for(int i = 3; i < 5; i++){
-//            stepperArray[i].step(dirToTop);
-//          }
-//        }
+        // for(int i = 0; i < 10; i++){
+        //     photodiode.getVoltage(100);
+        //     delay(10);      
+        // }
+
+
+        // for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
+        //   photodiode.getVoltage();
+        //   photodiode.getVoltage();
+        //   delay(10);
+        //   photodiode.getVoltage();
+        //   Serial.print(current_angle);
+        //   Serial.print(" ");
+        //   Serial.print(photodiode.getVoltage(100));
+        //   Serial.print("\r\n");
+        //   for(int i = 3; i < 5; i++){
+        //     stepperArray[i].step(dirToTop);
+        //   }
+        // }
 
         // sweep_5
-//        double forth_max = 29.52;
-//        stepperArray[0].nsteps(first_max/0.36,dirToTop);
-//        stepperArray[1].nsteps(second_max/0.36,dirToTop);
-//        stepperArray[2].nsteps(third_max/0.36,dirToTop);
-//        stepperArray[3].nsteps(forth_max/0.36,dirToTop);
-//        for(int i = 4; i < 5; i++){
-//          stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
-//        }
+       double forth_max = 50.04;
+      //  stepperArray[0].nsteps(first_max/0.36,dirToTop);
+      //  stepperArray[1].nsteps(second_max/0.36,dirToTop);
+      //  stepperArray[2].nsteps(third_max/0.36,dirToTop);
+      //  stepperArray[3].nsteps(forth_max/0.36,dirToTop);
+      //  for(int i = 4; i < 5; i++){
+      //    stepperArray[i].nsteps(initial_angle/0.36,dirToTop);
+      //  }
         
-        // corrigir ruido inicial
-//        for(int i = 0; i < 10; i++){
-//                photodiode.getVoltage(100);
-//                delay(10);      
-//        }
+      //   // corrigir ruido inicial
+      //  for(int i = 0; i < 10; i++){
+      //          photodiode.getVoltage(100);
+      //          delay(10);      
+      //  }
 
-//        for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
-//          photodiode.getVoltage();
-//          photodiode.getVoltage();
-//          delay(10);
-//          photodiode.getVoltage();
-//          Serial.print(current_angle);
-//          Serial.print(" ");
-//          Serial.print(photodiode.getVoltage());
-//          Serial.print("\r\n");
-//          for(int i = 4; i < 5; i++){
-//            stepperArray[i].step(dirToTop);
-//          }
-//        }
+      //  for(double current_angle = initial_angle; current_angle <= max_angle; current_angle+=0.36) {
+      //    photodiode.getVoltage();
+      //    photodiode.getVoltage();
+      //    delay(10);
+      //    photodiode.getVoltage();
+      //    Serial.print(current_angle);
+      //    Serial.print(" ");
+      //    Serial.print(photodiode.getVoltage());
+      //    Serial.print("\r\n");
+      //    for(int i = 4; i < 5; i++){
+      //      stepperArray[i].step(dirToTop);
+      //    }
+      //  }
 
         // sweep_full
 //        double fifth_max = 29.88;
@@ -414,6 +506,10 @@ extern class P1: public proto {
 //          }
 //        }
     
+        for(int i = 0; i < 5; i++){
+          stepperArray[i].turnOff();
+        }
+
       }else{
         // efetuar varrimento
         Serial.print("DAT\n\r");
@@ -445,11 +541,12 @@ extern class P1: public proto {
         
         if(expr.param[5] > 0 && expr.param[5] < 6){
           int initialSteps = expr.param[(int)expr.param[5]-1]; // step inicial do varrimento, pegar no numero (1-5) polarizer a varrer e subtrair 1 para obter index correto dos parametros
-          for(int currentStep = initialSteps; currentStep < expr.param[6];currentStep=currentStep+1){
-			stepperArray[expr.param[5]-1].enable();
-        	stepperArray[expr.param[5]-1].step(dirToTop);
-			stepperArray[expr.param[5]-1].turnOff();
-            delay(30);
+	  for(int currentStep = initialSteps; currentStep < expr.param[6];currentStep=currentStep+1){
+	    stepperArray[expr.param[5]-1].enable();            
+	    stepperArray[expr.param[5]-1].step(dirToTop);
+            delay(5);
+	    stepperArray[expr.param[5]-1].turnOff();
+	    delay(25);
             //  #1   |   348º   |    503mv    |    
             Serial.print("\n");
             Serial.print(currentStep-initialSteps+1);
@@ -463,8 +560,6 @@ extern class P1: public proto {
             // }
           }
         }
-
-        stepperArray[expr.param[5]-1].turnOff();
 
 
         
