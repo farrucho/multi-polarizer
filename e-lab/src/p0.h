@@ -34,6 +34,10 @@ extern class P0: public proto {
 
     }
 
+    void calibration(){
+      
+    }
+
     float photodiode_value(){
       return -1;
     }

@@ -37,6 +37,10 @@ Stepper stepper_Z(RPM_GLOBAL,46,48,A8);
 Stepper stepperArray[5] = {stepper_X, stepper_Y, stepper_E1, stepper_Z, stepper_E0};
 Switch switchArray[5] = {switch_X, switch_Y, switch_E1, switch_Z, switch_E0};
 
+// ordem inversa
+// Stepper stepperArray[5] = {stepper_E0,stepper_Z,stepper_E1,stepper_Y,stepper_X};
+// Switch switchArray[5] = {switch_E0, switch_Z, switch_E1, switch_Y, switch_X};
+
 
 Photodiode photodiode(A9);
 
@@ -236,8 +240,7 @@ extern class P1: public proto {
 
   }
 
-
-    void started() {
+    void calibration(){
       // Calibration algorithm
       // if one wants to perform the calibration algorithm it works as follow:
       // 1\ sweep all 5 polarizers synchronously (from initial_angle to max_angle) and find the maximum intensity angle a1
@@ -252,9 +255,6 @@ extern class P1: public proto {
       // manual method: uncomment autommatic, then one by one uncomment each block of code in order to perform the 5 sweeps u compile the code 5 times,
       // always updating the variables found to match the max intensity angles you found 
 
-
-      bool bruteForce = false;
-      if(bruteForce == true){
         this->reseting();
         led.turnOn(255);
         for(int i = 0; i < 5; i++){
@@ -264,9 +264,9 @@ extern class P1: public proto {
         double initial_angle = 25.2;
         double max_angle = 64.8;
         
-        int slice_top_offset = 525
-        int slice_bottom_offset = 500
-
+        int slice_top_offset = 530;
+        int slice_bottom_offset = 500;
+        int slice_interval = 3;
         // ---------------
         double peak_angles[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
         double step_size = 0.36;
@@ -315,7 +315,7 @@ extern class P1: public proto {
             float sum_midpoints = 0;
             int count = 0;
 
-            for (int i_val = slice_bottom_offset; i_val <= slice_top_offset; i_val += 5) {
+            for (int i_val = slice_bottom_offset; i_val <= slice_top_offset; i_val += slice_interval) {
                 float threshold = (float)i_val;
                 int left = max_idx, right = max_idx;
                 
@@ -336,8 +336,17 @@ extern class P1: public proto {
             Serial.print(" | Calculated Peak: "); Serial.println(peak_angles[i]);
         }
                         
-        
-      
+        Serial.print("|CALIBRATION ANGLES: "); 
+        Serial.print(peak_angles[0]);
+        Serial.print("  "); 
+        Serial.print(peak_angles[1]);
+        Serial.print("  "); 
+        Serial.print(peak_angles[2]);
+        Serial.print("  "); 
+        Serial.print(peak_angles[3]);
+        Serial.print("  "); 
+        Serial.print(peak_angles[4]);
+        Serial.print("\n");
         
 
         
@@ -509,44 +518,46 @@ extern class P1: public proto {
         for(int i = 0; i < 5; i++){
           stepperArray[i].turnOff();
         }
+    }
 
-      }else{
-        // efetuar varrimento
-        Serial.print("DAT\n\r");
-	
-	      // corrigir ruido inicial
-        for(int i = 0; i < 10; i++){
-                photodiode.getVoltage(100);
-                delay(10);      
-        }
 
-        // if (DEBUG) Serial.println("\n");
-  
-        // uint8_t resetDir = LOW;
-        
-        if(expr.param[5] == 0){
-            for(int i=0;i<10;i++){
-              delay(4);
-              Serial.print("\n");
-              Serial.print(i);
-              Serial.print("\t");
-              Serial.print("NaN");
-              Serial.print("\t");
-              Serial.print(photodiode.getVoltage());
-              Serial.print("\r");
-            }
-        }
-  
+    void started() {
+      // efetuar varrimento
+      Serial.print("DAT\n\r");
 
-        
-        if(expr.param[5] > 0 && expr.param[5] < 6){
-          int initialSteps = expr.param[(int)expr.param[5]-1]; // step inicial do varrimento, pegar no numero (1-5) polarizer a varrer e subtrair 1 para obter index correto dos parametros
-	  for(int currentStep = initialSteps; currentStep < expr.param[6];currentStep=currentStep+1){
-	    stepperArray[expr.param[5]-1].enable();            
-	    stepperArray[expr.param[5]-1].step(dirToTop);
+      // corrigir ruido inicial
+      for(int i = 0; i < 10; i++){
+              photodiode.getVoltage(100);
+              delay(10);      
+      }
+
+      // if (DEBUG) Serial.println("\n");
+
+      // uint8_t resetDir = LOW;
+      
+      if(expr.param[5] == 0){
+          for(int i=0;i<10;i++){
+            delay(4);
+            Serial.print("\n");
+            Serial.print(i);
+            Serial.print("\t");
+            Serial.print("NaN");
+            Serial.print("\t");
+            Serial.print(photodiode.getVoltage());
+            Serial.print("\r");
+          }
+      }
+
+
+      
+      if(expr.param[5] > 0 && expr.param[5] < 6){
+        int initialSteps = expr.param[(int)expr.param[5]-1]; // step inicial do varrimento, pegar no numero (1-5) polarizer a varrer e subtrair 1 para obter index correto dos parametros
+          for(int currentStep = initialSteps; currentStep < expr.param[6];currentStep=currentStep+1){
+            stepperArray[expr.param[5]-1].enable();            
+            stepperArray[expr.param[5]-1].step(dirToTop);
             delay(5);
-	    stepperArray[expr.param[5]-1].turnOff();
-	    delay(25);
+            stepperArray[expr.param[5]-1].turnOff();
+            delay(25);
             //  #1   |   348º   |    503mv    |    
             Serial.print("\n");
             Serial.print(currentStep-initialSteps+1);
@@ -558,22 +569,20 @@ extern class P1: public proto {
             // if(currentStep < expr.param[7] - 1){
             //   Serial.print("\n");
             // }
-          }
         }
-
-
-        
-        // Serial.print("\r");
-        // if (DEBUG) Serial.println("\n");
-  
-        //End data transmission
-        Serial.print("END\r");
-        // if (DEBUG) Serial.println("\n");
-        delay(1000);
-        led.turnOff();
-        lamp.turnOff();
       }
 
+
+      
+      // Serial.print("\r");
+      // if (DEBUG) Serial.println("\n");
+
+      //End data transmission
+      Serial.print("END\r");
+      // if (DEBUG) Serial.println("\n");
+      delay(1000);
+      led.turnOff();
+      lamp.turnOff();
     }
 
   } PP1;

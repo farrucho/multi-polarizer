@@ -38,6 +38,8 @@ class proto {
     virtual void go_to_origin();
     virtual float photodiode_value();
     virtual void update_Vref();
+
+    virtual void calibration();
 };
 
 
@@ -207,6 +209,7 @@ public:
           Serial.print("move forward polarizer_to_sweep[1:5] steps[0:MAXIMUM_STEP]\r\n");
           Serial.print("move backward polarizer_to_sweep[1:5] steps[0:MAXIMUM_STEP]\r\n");
           Serial.print("go to origin polarizer_to_sweep[1:5]\r\n\r\n");
+          Serial.print("calibration // perform automatic calibration\r\n\r\n");
           Serial.print("MAXIMUM_STEP: ");
           Serial.print(MAXIMUM_STEP);
           Serial.print(" steps\r\n");
@@ -389,6 +392,12 @@ public:
           }
           protocol[p_run]->go_to_origin();
           Serial.print("go_to_origin\r\n");
+        }
+        if (strncmp(rbuf, "calibration",11) == 0)
+        {
+          Serial.print("running_calibration\r\n");
+          protocol[p_run]->calibration();
+          Serial.print("CALIBRATION_OK\r\n");
         }
         if (strncmp(rbuf, "cfg", 3) == 0)
         {
