@@ -28,7 +28,7 @@ oeiras:
     int vrefMode = 3;
 ```
 
-lordelos order of steppers is switched:
+oeiras order of steppers is switched:
 ```
 Stepper stepperArray[5] = {stepper_E0,stepper_Z,stepper_E1,stepper_Y,stepper_X};
 Switch switchArray[5] = {switch_E0, switch_Z, switch_E1, switch_Y, switch_X};
