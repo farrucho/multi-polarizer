@@ -15,6 +15,7 @@ class Photodiode {
 
         void enable(){
             pinMode(analog_pin, INPUT);
+            changeReference();
         }
         
         void changeReference(){
