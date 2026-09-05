@@ -35,21 +35,12 @@ class Stepper {
             digitalWrite(enable_pin, LOW);   // Ativar stepper
         }
         
-        void step(uint8_t direction){ // Faz um único step
-            digitalWrite(dir_pin, direction);   // Sentido ponteiros relógio
-
-            digitalWrite(step_pin, HIGH);
-            delayMicroseconds(step_high_delay*1000);
-            digitalWrite(step_pin, LOW);
-            delayMicroseconds(step_low_delay*1000);
-        }
+        void step(uint8_t direction){ nsteps(1, direction); }
 
 
-        void nsteps(int steps, uint8_t direction){ // Faz N-steps
-            for(int i = 0; i < steps; i++){
-                step(direction);
-            }
-        }
+        // Timer1 schedules pulses; this call waits for the move to complete.
+        // Call only from the main loop with interrupts enabled.
+        void nsteps(int steps, uint8_t direction);
 
 
         // void rotate(double degree,uint8_t direction){ // Faz N-steps para rodar alfa-graus
